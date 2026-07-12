@@ -312,3 +312,67 @@ model AuditItem {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
+
+// -------------------------------------------------------------
+// CORE SYSTEM LAYER
+// -------------------------------------------------------------
+
+model Attachment {
+  id              String         @id @default(uuid())
+  targetType      String // Asset, Maintenance, PurchaseOrder
+  targetId        String
+  assetId         String?
+  asset           Asset?         @relation(fields: [assetId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  url             String
+  filename        String
+  uploadedAt      DateTime       @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message     String
+  eventType   String
+  referenceId String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  action        String
+  targetType    String
+  targetId      String
+  previousState String?
+  currentState  String?
+  remarks       String?
+  timestamp     DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  action        String // CREATE, UPDATE, DELETE
+  tableName     String
+  recordId      String
+  changedValues String? // JSON string
+  timestamp     DateTime @default(now())
+  ipAddress     String?
+  userAgent     String?
+  correlationId String?
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
