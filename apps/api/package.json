@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "test": "ts-node src/tests/run-tests.ts",
+    "test:stress": "ts-node src/tests/run-stress-tests.ts",
+    "test:performance": "ts-node src/tests/run-performance-tests.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
