@@ -1,10 +1,10 @@
-name: Continuous Integration
+name: Production Release Validation
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*' # Trigger on release tags (e.g., v1.0.0)
+  workflow_dispatch: # Support manual triggers
 
 env:
   DATABASE_URL: "file:${{ github.workspace }}/prisma/dev.db"
@@ -15,7 +15,7 @@ env:
   NEXT_PUBLIC_API_URL: "http://localhost:4000/api/v1"
 
 jobs:
-  build-and-test:
+  release-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase
@@ -33,6 +33,9 @@ jobs:
       - name: Run ESLint Checks
         run: npm run lint
 
+      - name: Validate Prisma Schema
+        run: npx prisma validate --schema=prisma/schema.prisma
+
       - name: Generate Prisma Client
         run: npx prisma generate --schema=prisma/schema.prisma
 
@@ -42,13 +45,10 @@ jobs:
       - name: Seed Database Records
         run: npx ts-node apps/api/src/seed.ts
 
-      - name: Build Monorepo API Gateway
-        run: npm run build --workspace=apps/api
+      - name: Build Workspaces
+        run: npm run build
 
-      - name: Build Monorepo Web Portal
-        run: npm run build --workspace=apps/web
-
-      - name: Run Self-Contained Integration Tests
+      - name: Run Integration Tests
         run: npm run test --workspace=apps/api
 
       - name: Install Playwright Browsers
@@ -56,3 +56,24 @@ jobs:
 
       - name: Run Playwright E2E Browser Tests
         run: npx playwright test --config=apps/web/playwright.config.ts
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Docker API Build
+        run: docker build -f docker/Dockerfile.api -t assetflow-api:test .
+
+      - name: Verify Docker Web Build
+        run: docker build -f docker/Dockerfile.web -t assetflow-web:test .
+
+      - name: Create Release Telemetry Artifacts
+        run: |
+          mkdir -p build-reports
+          echo "Release validation checks completed successfully on $(date)" > build-reports/summary.txt
+          echo "Commit: ${{ github.sha }}" >> build-reports/summary.txt
+
+      - name: Upload Release Summary Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-report
+          path: build-reports/

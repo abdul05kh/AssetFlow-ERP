@@ -1,0 +1,45 @@
+name: Nightly Concurrency & Stress Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Nightly at 2:00 AM UTC
+  workflow_dispatch: # Support manual triggers
+
+env:
+  DATABASE_URL: "file:${{ github.workspace }}/prisma/dev.db"
+  JWT_SECRET: "super-secret-jwt-key-for-test-environments"
+  JWT_REFRESH_SECRET: "super-secret-jwt-refresh-key-for-test-environments"
+  PORT: 4000
+  NODE_ENV: test
+  NEXT_PUBLIC_API_URL: "http://localhost:4000/api/v1"
+  SQLITE_STRESS_WORKERS: 3
+
+jobs:
+  stress-benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=prisma/schema.prisma
+
+      - name: Execute Stress Telemetry Benchmark
+        run: npm run test:stress
+
+      - name: Upload Stress Benchmark Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-benchmark-reports
+          path: |
+            docs/STRESS_TEST_REPORT.md
+            docs/benchmarks/
