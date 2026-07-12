@@ -53,3 +53,18 @@ The GitHub Actions pipeline is defined in [ci.yml](file:///d:/projects/AssetFlow
    - Playwright automatically spawns the Next.js frontend (port 3000) and the backend API (port 4000) via its built-in config.
    - It polls `http://localhost:3000` and `http://localhost:4000/health` before starting browser tests.
    - It gracefully terminates both server processes upon execution exit.
+
+---
+
+## 4. Regression & High-Concurrency Stress Testing
+
+To verify transactional reliability and the non-blocking behavior of the post-commit logging architecture, the automated integration test suite includes specialized regression and load validation stages:
+
+### Regression Verifications
+- **Activity & Audit Mappings**: Asserts that `ActivityLog`, `AuditLog`, and `Notification` table records are created successfully following transfer approvals, confirming they persist correctly without blocking business commits.
+- **Error Boundaries**: Verifies that when database errors occur, transactions roll back cleanly without writing orphan audit data.
+
+### High-Concurrency Stress Tests
+- **Parallel Workloads**: Executes 20 simultaneous asset creations and allocations, followed by 10 concurrent transfer requests and approvals.
+- **Locks & Deadlocks Check**: Ensures all concurrent operations complete without SQLite write lock contentions or timeouts.
+- **Logs Auditing**: Confirms that more than 50 audit logs are correctly written post-commit under parallel stress loads, with zero duplicate entries.
