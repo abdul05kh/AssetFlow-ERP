@@ -20,6 +20,9 @@
 [![Playwright](https://img.shields.io/badge/Playwright-E2E-45ba4b?style=flat-square&logo=playwright&logoColor=white)](https://playwright.dev/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/abdul05kh/AssetFlow-ERP?style=flat-square&color=0ea5e9)](https://github.com/abdul05kh/AssetFlow-ERP/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)](https://github.com/abdul05kh/AssetFlow-ERP/releases/tag/v1.0.0)
+[![GitHub Release](https://img.shields.io/badge/release-v1.0.0-success?style=flat-square)](https://github.com/abdul05kh/AssetFlow-ERP/releases/tag/v1.0.0)
 
 </div>
 
