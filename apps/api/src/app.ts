@@ -72,6 +72,25 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// GET /api/v1/metrics for queue and query telemetry
+import { jobQueue } from "./utils/job-queue";
+import { dbMetrics } from "./config/db";
+app.get("/api/v1/metrics", (req, res) => {
+  res.json({
+    status: "ok",
+    queue: jobQueue.getMetrics(),
+    database: {
+      totalQueries: dbMetrics.totalQueries,
+      totalReads: dbMetrics.totalReads,
+      totalWrites: dbMetrics.totalWrites,
+      averageDurationMs: dbMetrics.totalQueries > 0
+        ? parseFloat((dbMetrics.totalDurationMs / dbMetrics.totalQueries).toFixed(2))
+        : 0,
+      slowestQueries: dbMetrics.slowestQueries,
+    }
+  });
+});
+
 // Route API Versioning
 app.use("/api/v1", apiRouter);
 

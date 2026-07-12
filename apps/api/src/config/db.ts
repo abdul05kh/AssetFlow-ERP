@@ -2,6 +2,25 @@ import { PrismaClient } from "@prisma/client";
 import { auditContextStorage, transactionContextStorage } from "../utils/context";
 import { eventBus } from "../events/event-bus";
 import logger from "../utils/logger";
+import { jobQueue } from "../utils/job-queue";
+
+export interface DbPerformanceMetrics {
+  totalQueries: number;
+  totalReads: number;
+  totalWrites: number;
+  totalDurationMs: number;
+  slowestQueries: Array<{ model: string; operation: string; durationMs: number; queryArgs: string }>;
+  queryDurations: number[];
+}
+
+export const dbMetrics: DbPerformanceMetrics = {
+  totalQueries: 0,
+  totalReads: 0,
+  totalWrites: 0,
+  totalDurationMs: 0,
+  slowestQueries: [],
+  queryDurations: [],
+};
 
 const basePrisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
@@ -9,6 +28,38 @@ const basePrisma = new PrismaClient({
 
 const extendedPrisma = basePrisma.$extends({
   query: {
+    $allOperations: async ({ model, operation, args, query }) => {
+      const startTime = Date.now();
+      const result = await query(args);
+      const duration = Date.now() - startTime;
+
+      // Track query performance metrics
+      dbMetrics.totalQueries++;
+      dbMetrics.queryDurations.push(duration);
+      dbMetrics.totalDurationMs += duration;
+
+      const isWrite = ["create", "update", "delete", "upsert", "createMany", "updateMany", "deleteMany"].includes(operation);
+      if (isWrite) {
+        dbMetrics.totalWrites++;
+      } else {
+        dbMetrics.totalReads++;
+      }
+
+      // Track slowest queries (keep top 10)
+      dbMetrics.slowestQueries.push({
+        model: model || "Raw",
+        operation,
+        durationMs: duration,
+        queryArgs: JSON.stringify(args),
+      });
+      dbMetrics.slowestQueries.sort((a, b) => b.durationMs - a.durationMs);
+      if (dbMetrics.slowestQueries.length > 10) {
+        dbMetrics.slowestQueries.pop();
+      }
+
+      return result;
+    },
+
     $allModels: {
       async create({ model, operation, args, query }) {
         const result = await query(args);
@@ -35,11 +86,7 @@ const extendedPrisma = basePrisma.$extends({
           if (txContext && txContext.inTransaction) {
             txContext.pendingAuditLogs.push(logWriter);
           } else {
-            setImmediate(async () => {
-              try {
-                await logWriter();
-              } catch (e) {}
-            });
+            jobQueue.push(logWriter);
           }
         }
         return result;
@@ -90,11 +137,7 @@ const extendedPrisma = basePrisma.$extends({
           if (txContext && txContext.inTransaction) {
             txContext.pendingAuditLogs.push(logWriter);
           } else {
-            setImmediate(async () => {
-              try {
-                await logWriter();
-              } catch (e) {}
-            });
+            jobQueue.push(logWriter);
           }
         }
         return result;
@@ -144,11 +187,7 @@ const extendedPrisma = basePrisma.$extends({
           if (txContext && txContext.inTransaction) {
             txContext.pendingAuditLogs.push(logWriter);
           } else {
-            setImmediate(async () => {
-              try {
-                await logWriter();
-              } catch (e) {}
-            });
+            jobQueue.push(logWriter);
           }
         }
         return result;
@@ -187,11 +226,7 @@ const originalTransaction = (extendedPrisma as any).$transaction;
         }
 
         for (const logFn of pendingAuditLogs) {
-          try {
-            await logFn();
-          } catch (e) {
-            logger.error(`[Transaction] Post-commit audit log write failed:`, e);
-          }
+          jobQueue.push(logFn);
         }
       });
 
