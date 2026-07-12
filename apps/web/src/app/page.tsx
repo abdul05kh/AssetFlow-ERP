@@ -1,5 +1,5 @@
 "use client";
 import { useState } from "react";
 export default function ERPPortal() {
-  return <div>Assets registry inventory tables list view</div>;
+  return <div>Asset assignments allocations modals form</div>;
 }
