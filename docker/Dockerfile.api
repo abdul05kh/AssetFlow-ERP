@@ -4,9 +4,10 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY apps/api/package*.json ./apps/api/
 COPY packages/ ./packages/
+COPY prisma/ ./prisma/
 RUN npm install
+RUN npx prisma generate
 COPY apps/api/ ./apps/api/
-RUN pwd && ls -la && (ls -la prisma || true) && (find prisma -maxdepth 3 || true) && (cat prisma/schema.prisma || true)
 RUN npm run build --workspace=@assetflow/types --workspace=@assetflow/utils --workspace=@assetflow/config && npm run build --workspace=apps/api
 EXPOSE 4000
 CMD ["npm", "start", "--workspace=apps/api"]

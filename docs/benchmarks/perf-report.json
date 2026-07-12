@@ -1,36 +1,36 @@
 {
-  "timestamp": "2026-07-12T10:15:55.380Z",
-  "gitCommit": "15a22441de67179ddefc40834ee2a965c515c21e",
+  "timestamp": "2026-07-12T11:05:05.374Z",
+  "gitCommit": "05290a85a9f5a20757198c51f4ec8a20def26dcc",
   "branch": "main",
   "nodeVersion": "v24.13.0",
   "databaseProvider": "SQLite/fallback",
   "os": "Windows_NT 10.0.26200",
   "cpu": "13th Gen Intel(R) Core(TM) i7-13700HX",
   "systemMetrics": {
-    "peakRssMemory": "496.23 MB",
-    "heapTotal": "421.09 MB",
-    "heapUsed": "302.65 MB",
-    "cpuTimeMs": 859,
-    "avgEventLoopDelayMs": 0.06,
+    "peakRssMemory": "496.66 MB",
+    "heapTotal": "420.34 MB",
+    "heapUsed": "303.68 MB",
+    "cpuTimeMs": 875,
+    "avgEventLoopDelayMs": 0.03,
     "maxEventLoopDelayMs": 1
   },
   "httpMetrics": {
     "totalRequestsSimulated": 100,
     "successCount": 100,
     "errorCount": 0,
-    "throughputOpsPerSecond": 47.26,
-    "averageLatencyMs": 11.02,
-    "p95LatencyMs": 48,
-    "p99LatencyMs": 62,
-    "maxLatencyMs": 62,
-    "totalRuntimeMs": 2116
+    "throughputOpsPerSecond": 45.58,
+    "averageLatencyMs": 11.7,
+    "p95LatencyMs": 45,
+    "p99LatencyMs": 79,
+    "maxLatencyMs": 79,
+    "totalRuntimeMs": 2194
   },
   "databaseMetrics": {
     "totalQueries": 510,
     "totalReads": 409,
     "totalWrites": 101,
-    "avgQueryTimeMs": 2.01,
-    "slowestQueryText": "{\"data\":{\"action\":\"CREATE\",\"targetType\":\"Asset\",\"targetId\":\"2061abb6-ab37-478d-ae0d-30011ba1449d\",\"currentState\":\"AVAILABLE\",\"remarks\":\"Asset registered with tag: AF-000006 and name: Perf Asset 5\"}}",
-    "slowestQueryTimeMs": 64
+    "avgQueryTimeMs": 2.47,
+    "slowestQueryText": "{\"data\":{\"action\":\"CREATE\",\"targetType\":\"Asset\",\"targetId\":\"0d525a72-c28f-49d1-aaff-0371a58a3f16\",\"currentState\":\"AVAILABLE\",\"remarks\":\"Asset registered with tag: AF-000046 and name: Perf Asset 45\"}}",
+    "slowestQueryTimeMs": 96
   }
 }
