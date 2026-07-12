@@ -18,4 +18,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
+  // Phase 9 - Spawn servers relative toapps/web location
+  webServer: [
+    {
+      command: "npm run dev",
+      url: "http://localhost:3000",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: "npm run dev --prefix ../api",
+      url: "http://localhost:4000/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    }
+  ],
 });
