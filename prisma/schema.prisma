@@ -151,3 +151,50 @@ model AssetImage {
   url       String
   uploadedAt DateTime @default(now())
 }
+
+// -------------------------------------------------------------
+// ASSET WORKFLOWS (ALLOCATION, TRANSFER, RETURN)
+// -------------------------------------------------------------
+
+model Allocation {
+  id                 String          @id @default(uuid())
+  assetId            String
+  asset              Asset           @relation(fields: [assetId], references: [id])
+  employeeId         String?
+  employee           User?           @relation(fields: [employeeId], references: [id])
+  departmentId       String?
+  department         Department?     @relation(fields: [departmentId], references: [id])
+  allocationDate     DateTime        @default(now())
+  expectedReturnDate DateTime?
+  actualReturnDate   DateTime?
+  conditionOnReturn  String?
+  notes              String?
+  status             String          @default("ACTIVE") // ACTIVE, RETURNED
+  transfers          AssetTransfer[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+}
+
+model AssetTransfer {
+  id              String      @id @default(uuid())
+  assetId         String
+  asset           Asset       @relation(fields: [assetId], references: [id])
+  allocationId    String
+  allocation      Allocation  @relation(fields: [allocationId], references: [id])
+  currentHolderId String
+  currentHolder   User        @relation("TransfersFrom", fields: [currentHolderId], references: [id])
+  targetHolderId  String
+  targetHolder    User        @relation("TransfersTo", fields: [targetHolderId], references: [id])
+  requestedById   String
+  requestedBy     User        @relation("TransfersRequested", fields: [requestedById], references: [id])
+  approvedById    String?
+  approvedBy      User?       @relation("TransfersApproved", fields: [approvedById], references: [id])
+  reason          String
+  requestedDate   DateTime    @default(now())
+  transferDate    DateTime?
+  status          String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+// -------------------------------------------------------------
