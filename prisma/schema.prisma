@@ -198,3 +198,43 @@ model AssetTransfer {
 }
 
 // -------------------------------------------------------------
+// RESOURCE BOOKING
+// -------------------------------------------------------------
+
+model ResourceBooking {
+  id         String   @id @default(uuid())
+  resourceId String
+  resource   Asset    @relation(fields: [resourceId], references: [id])
+  employeeId String
+  employee   User     @relation(fields: [employeeId], references: [id])
+  startTime  DateTime
+  endTime    DateTime
+  purpose    String
+  status     String   @default("REQUESTED") // REQUESTED, CONFIRMED, ONGOING, COMPLETED, CANCELLED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// -------------------------------------------------------------
+// MAINTENANCE MANAGEMENT
+// -------------------------------------------------------------
+
+model MaintenanceRequest {
+  id            String    @id @default(uuid())
+  assetId       String
+  asset         Asset     @relation(fields: [assetId], references: [id])
+  requestedById String
+  requestedBy   User      @relation("RequestsRaised", fields: [requestedById], references: [id])
+  technicianId  String?
+  technician    User?     @relation("RequestsAssigned", fields: [technicianId], references: [id])
+  description   String
+  priority      String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status        String    @default("PENDING") // PENDING, APPROVED, TECHNICIAN_ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, REJECTED
+  cost          Decimal?
+  notes         String?
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// -------------------------------------------------------------
