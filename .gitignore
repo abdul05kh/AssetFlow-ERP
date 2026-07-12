@@ -1,0 +1,38 @@
+# Dependency directories
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript compilation output
+dist/
+build/
+
+# Local databases & logs
+*.db
+*.db-journal
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
