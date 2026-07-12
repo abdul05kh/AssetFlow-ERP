@@ -36,3 +36,29 @@ Inside the container context:
 npx prisma migrate deploy
 ```
 This syncs schemas, sets indexes, and applies cascades.
+
+---
+
+## 3. Health Checks & Service Readiness
+
+AssetFlow API exposes a lightweight `/health` check endpoint used by Kubernetes, load balancers, and Docker orchestration tools:
+
+- **Endpoint**: `GET http://localhost:4000/health`
+- **Response Format**: `application/json`
+- **Payload Shape**:
+  ```json
+  {
+    "status": "ok"
+  }
+  ```
+
+### Automated Startups Readiness Check
+
+When booting in automated configurations (e.g. CI/CD runners, Docker compose orchestrators), utilize the following curl command to wait for the Express API to be fully initialized before launching depending portals or run-time validations:
+
+```bash
+until $(curl --output /dev/null --silent --head --fail http://localhost:4000/health); do
+    echo "Waiting for AssetFlow API service gateway..."
+    sleep 1
+done
+```

@@ -31,3 +31,25 @@ Scenarios:
 - Demo credentials dashboard access.
 - Filter toolbar fields (search queries).
 - Tabs buttons mount checks (Overview, Assets Inventory).
+
+---
+
+## 3. Continuous Integration (CI) Lifecycle
+
+The GitHub Actions pipeline is defined in [ci.yml](file:///d:/projects/AssetFlow-ERP/.github/workflows/ci.yml). It automates the full build-and-test verification cycle:
+
+1. **Environment Setup**: Checks out code, boots Node.js v22 environment, and installs monorepo dependencies.
+2. **Database Initialization & Seeding**:
+   - Compiles Prisma Client mapping: `npx prisma generate`
+   - Recreates a clean test schema: `npx prisma db push --force-reset --accept-data-loss`
+   - Populates default departments, roles, categories, and test user accounts: `npx ts-node apps/api/src/seed.ts`
+3. **Monorepo Compilation**: Runs workspaces build scripts.
+4. **Automated Integration Testing**:
+   - The test runner [run-tests.ts](file:///d:/projects/AssetFlow-ERP/apps/api/src/tests/run-tests.ts) programmatically spins up the Express server on port 4000.
+   - It performs readiness polling against the `GET /health` endpoint (max 30 attempts, 500ms delay).
+   - Once `/health` is healthy, it executes the 8 REST integration test cases.
+   - Upon completion, it gracefully shuts down the Express listener.
+5. **Playwright E2E Verification**:
+   - Playwright automatically spawns the Next.js frontend (port 3000) and the backend API (port 4000) via its built-in config.
+   - It polls `http://localhost:3000` and `http://localhost:4000/health` before starting browser tests.
+   - It gracefully terminates both server processes upon execution exit.

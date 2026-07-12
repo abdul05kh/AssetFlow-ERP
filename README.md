@@ -60,10 +60,19 @@ Endpoints cover:
 
 ---
 
-## 🧪 Running Integration Tests
+## 🧪 Running Integration & E2E Tests
 
-To run the automated integration test suite checking out login access, sequence tag mapping, double allocation locks, ownership transfers, and return triggers:
-
+### 1. Integration Tests
+To run the automated, self-contained integration test suite (which automatically initializes database schema, executes migrations, applies seeds, starts the Express gateway, polls `/health`, and runs 8 REST tests):
 ```bash
 npm run test --workspace=apps/api
 ```
+
+### 2. Playwright E2E Browser Tests
+To run Playwright browser tests (which automatically orchestrate both Next.js and API server startup and teardown internally):
+```bash
+npx playwright test --config=apps/web/playwright.config.ts
+```
+
+### 3. Continuous Integration (CI)
+The project includes a production-grade GitHub Actions CI workflow in [.github/workflows/ci.yml](file:///.github/workflows/ci.yml) that automatically validates code quality and test compliance on every push and pull request to the `main` branch. All services are monitored via the `/health` endpoint before running browser validation scenarios.
