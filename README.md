@@ -896,39 +896,6 @@ Full reports: [PERFORMANCE_REPORT.md](docs/PERFORMANCE_REPORT.md) | [STRESS_TEST
 
 ---
 
-## Contributing
-
-Contributions are welcome. Please follow these guidelines:
-
-1. **Fork** the repository and create your feature branch from `main`
-   ```bash
-   git checkout -b feat/your-feature-name
-   ```
-
-2. **Follow the module pattern** — new features go into `apps/api/src/modules/<name>/` with controller, service, repository, routes, and validation files
-
-3. **Validate locally** before opening a PR:
-   ```bash
-   npm run lint          # No errors allowed
-   npm run build         # Must compile cleanly
-   npm run test --workspace=apps/api   # All 8+ integration tests must pass
-   npx playwright test --config=apps/web/playwright.config.ts
-   ```
-
-4. **Write tests** — new business logic must include at least one integration test scenario in `run-tests.ts`
-
-5. **Preserve the audit trail** — any new model that mutates state must emit the appropriate domain events through the EventBus
-
-6. **Open a Pull Request** with a clear description of the change, the problem it solves, and how it was tested
-
----
-
-## License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
 ## Acknowledgements
 
 AssetFlow ERP was built with these exceptional open-source technologies:
