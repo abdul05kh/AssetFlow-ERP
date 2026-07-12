@@ -2,6 +2,7 @@ import { auditRepository } from "../repository/audit.repository";
 import { CreateAuditInput, VerifyAuditItemInput } from "../validator/audit.validator";
 import { NotFoundError, BusinessRuleError, ForbiddenError } from "../../../utils/errors";
 import { prisma } from "../../../config/db";
+import { UserRole, Role } from "@prisma/client";
 import eventBus from "../../../events/event-bus";
 import logger from "../../../utils/logger";
 
@@ -17,7 +18,7 @@ export class AuditService {
       throw new BusinessRuleError("Target auditor record does not exist or is inactive", "USER_002");
     }
 
-    const isAuditor = auditorUser.userRoles.some((ur) => ur.role.code === "AUDITOR" || ur.role.code === "ADMIN");
+    const isAuditor = auditorUser.userRoles.some((ur: UserRole & { role: Role }) => ur.role.code === "AUDITOR" || ur.role.code === "ADMIN");
     if (!isAuditor) {
       throw new BusinessRuleError("Target user is not registered as an auditor", "AUDIT_001");
     }

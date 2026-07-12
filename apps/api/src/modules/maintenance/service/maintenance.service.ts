@@ -6,7 +6,8 @@ import {
   CloseMaintenanceInput,
 } from "../validator/maintenance.validator";
 import { NotFoundError, BusinessRuleError, ForbiddenError } from "../../../utils/errors";
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
+import { UserRole, Role } from "@prisma/client";
 import eventBus from "../../../events/event-bus";
 import logger from "../../../utils/logger";
 
@@ -73,7 +74,7 @@ export class MaintenanceService {
     }
 
     // Approve the request
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: TransactionClient) => {
       // Update ticket status
       const req = await tx.maintenanceRequest.update({
         where: { id },
@@ -115,7 +116,7 @@ export class MaintenanceService {
       throw new BusinessRuleError("Target technician is inactive or does not exist", "USER_002");
     }
 
-    const isTechnician = techUser.userRoles.some((ur) => ur.role.code === "TECHNICIAN");
+    const isTechnician = techUser.userRoles.some((ur: UserRole & { role: Role }) => ur.role.code === "TECHNICIAN");
     if (!isTechnician && techUser.userRoles[0]?.role.code !== "ADMIN") {
       throw new BusinessRuleError("User is not registered as a technician", "MAINT_004");
     }

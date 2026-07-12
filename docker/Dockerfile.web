@@ -5,6 +5,6 @@ COPY apps/web/package*.json ./apps/web/
 COPY packages/ ./packages/
 RUN npm install
 COPY apps/web/ ./apps/web/
-RUN npm run build --workspace=apps/web
+RUN npm run build --workspace=@assetflow/types --workspace=@assetflow/utils --workspace=@assetflow/config --workspace=@assetflow/ui && npm run build --workspace=apps/web
 EXPOSE 3000
 CMD ["npm", "start", "--workspace=apps/web"]

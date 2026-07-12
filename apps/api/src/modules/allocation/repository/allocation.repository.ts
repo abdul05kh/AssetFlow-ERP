@@ -1,10 +1,10 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateAllocationInput } from "../validator/allocation.validator";
 import { BusinessRuleError } from "../../../utils/errors";
 
 export class AllocationRepository {
   async create(data: CreateAllocationInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Fetch the asset and lock/check status
       const asset = await tx.asset.findUnique({
         where: { id: data.assetId },

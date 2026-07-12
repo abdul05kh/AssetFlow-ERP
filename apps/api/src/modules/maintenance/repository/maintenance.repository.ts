@@ -1,4 +1,4 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateMaintenanceInput, ResolveMaintenanceInput, CloseMaintenanceInput } from "../validator/maintenance.validator";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -76,7 +76,7 @@ export class MaintenanceRepository {
   }
 
   async close(id: string, data: CloseMaintenanceInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       const request = await tx.maintenanceRequest.findUnique({
         where: { id },
       });

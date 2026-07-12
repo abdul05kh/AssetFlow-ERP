@@ -1,10 +1,10 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateAuditInput, VerifyAuditItemInput } from "../validator/audit.validator";
 import { BusinessRuleError } from "../../../utils/errors";
 
 export class AuditRepository {
   async create(data: CreateAuditInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Create the Audit Cycle record
       const audit = await tx.audit.create({
         data: {
@@ -103,7 +103,7 @@ export class AuditRepository {
   }
 
   async close(id: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       const audit = await tx.audit.findUnique({
         where: { id },
         include: { items: { include: { asset: true } } },

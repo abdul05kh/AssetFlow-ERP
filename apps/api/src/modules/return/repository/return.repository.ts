@@ -1,10 +1,10 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { ReturnAssetInput } from "../validator/return.validator";
 import { BusinessRuleError } from "../../../utils/errors";
 
 export class ReturnRepository {
   async executeReturn(data: ReturnAssetInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Fetch active allocation for asset
       const allocation = await tx.allocation.findFirst({
         where: {

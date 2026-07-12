@@ -1,4 +1,4 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateCategoryInput, CreateAssetInput, UpdateAssetInput } from "../validator/asset.validator";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -36,7 +36,7 @@ export class AssetRepository {
   // -------------------------------------------------------------
 
   async createAsset(data: CreateAssetInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Calculate the next unique Asset Tag code (e.g. AF-000001)
       const lastAsset = await tx.asset.findFirst({
         orderBy: { tag: "desc" },
@@ -127,7 +127,7 @@ export class AssetRepository {
   }
 
   async updateAsset(id: string, data: UpdateAssetInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       const updateData: any = {
         name: data.name,
         serialNumber: data.serialNumber,

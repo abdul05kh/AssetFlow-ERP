@@ -1,4 +1,4 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { RequestTransferInput } from "../validator/transfer.validator";
 import { BusinessRuleError } from "../../../utils/errors";
 
@@ -48,7 +48,7 @@ export class TransferRepository {
     }
 
     // APPROVED runs inside database transaction
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       const transfer = await tx.assetTransfer.findUnique({
         where: { id },
         include: { targetHolder: true, asset: true },

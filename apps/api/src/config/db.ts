@@ -28,7 +28,7 @@ const basePrisma = new PrismaClient({
 
 const extendedPrisma = basePrisma.$extends({
   query: {
-    $allOperations: async ({ model, operation, args, query }) => {
+    $allOperations: async ({ model, operation, args, query }: { model?: string; operation: string; args: any; query: (args: any) => Promise<any> }) => {
       const startTime = Date.now();
       const result = await query(args);
       const duration = Date.now() - startTime;
@@ -61,7 +61,7 @@ const extendedPrisma = basePrisma.$extends({
     },
 
     $allModels: {
-      async create({ model, operation, args, query }) {
+      async create({ model, operation, args, query }: { model: string; operation: string; args: any; query: (args: any) => Promise<any> }) {
         const result = await query(args);
 
         if (model !== "AuditLog") {
@@ -92,7 +92,7 @@ const extendedPrisma = basePrisma.$extends({
         return result;
       },
 
-      async update({ model, operation, args, query }) {
+      async update({ model, operation, args, query }: { model: string; operation: string; args: any; query: (args: any) => Promise<any> }) {
         const txContext = transactionContextStorage.getStore();
         let oldState: any = null;
 
@@ -143,7 +143,7 @@ const extendedPrisma = basePrisma.$extends({
         return result;
       },
 
-      async delete({ model, operation, args, query }) {
+      async delete({ model, operation, args, query }: { model: string; operation: string; args: any; query: (args: any) => Promise<any> }) {
         const txContext = transactionContextStorage.getStore();
         let oldState: any = null;
 
@@ -249,5 +249,6 @@ const originalTransaction = (extendedPrisma as any).$transaction;
   return originalTransaction.call(this, arg1, arg2);
 };
 
+export type TransactionClient = Parameters<Parameters<typeof extendedPrisma.$transaction>[0]>[0];
 export const prisma = extendedPrisma;
 export default prisma;

@@ -1,9 +1,9 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateUserInput, UpdateUserInput } from "../validator/user.validator";
 
 export class UserRepository {
   async create(data: CreateUserInput & { passwordHash: string; roleId: string }) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       const user = await tx.user.create({
         data: {
           email: data.email,
@@ -81,7 +81,7 @@ export class UserRepository {
   }
 
   async promote(userId: string, newRoleId: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // Delete existing roles
       await tx.userRole.deleteMany({
         where: { userId },

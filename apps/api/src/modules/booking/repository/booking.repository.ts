@@ -1,10 +1,10 @@
-import { prisma } from "../../../config/db";
+import { prisma, TransactionClient } from "../../../config/db";
 import { CreateBookingInput } from "../validator/booking.validator";
 import { BusinessRuleError } from "../../../utils/errors";
 
 export class BookingRepository {
   async create(data: CreateBookingInput & { employeeId: string }) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Fetch asset details
       const asset = await tx.asset.findUnique({
         where: { id: data.resourceId },
