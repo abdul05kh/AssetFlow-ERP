@@ -8,4 +8,15 @@ export interface AuditLogContext {
 }
 
 export const auditContextStorage = new AsyncLocalStorage<AuditLogContext>();
+
+export interface TransactionContext {
+  inTransaction: boolean;
+  txClient: any;
+  pendingAuditLogs: Array<() => Promise<void>>;
+  pendingEvents: Array<{ eventName: string; data: any }>;
+  isRecursive?: boolean;
+}
+
+export const transactionContextStorage = new AsyncLocalStorage<TransactionContext>();
+
 export default auditContextStorage;

@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import logger from "../utils/logger";
+import { transactionContextStorage } from "../utils/context";
 
 class EventBus extends EventEmitter {
   constructor() {
@@ -9,8 +10,14 @@ class EventBus extends EventEmitter {
   }
 
   publish(eventName: string, data: any) {
-    logger.debug(`[EventBus] Publishing event: ${eventName}`, { payload: data });
-    this.emit(eventName, data);
+    const txContext = transactionContextStorage.getStore();
+    if (txContext && txContext.inTransaction) {
+      logger.debug(`[EventBus] Queueing event inside transaction: ${eventName}`);
+      txContext.pendingEvents.push({ eventName, data });
+    } else {
+      logger.debug(`[EventBus] Publishing event: ${eventName}`, { payload: data });
+      this.emit(eventName, data);
+    }
   }
 
   subscribe(eventName: string, listener: (data: any) => void) {
