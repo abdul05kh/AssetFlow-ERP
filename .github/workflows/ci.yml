@@ -6,21 +6,50 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  DATABASE_URL: "file:${{ github.workspace }}/prisma/dev.db"
+  JWT_SECRET: "super-secret-jwt-key-for-test-environments"
+  JWT_REFRESH_SECRET: "super-secret-jwt-refresh-key-for-test-environments"
+  PORT: 4000
+  NODE_ENV: test
+  NEXT_PUBLIC_API_URL: "http://localhost:4000/api/v1"
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      - name: Install dependencies
+
+      - name: Install Monorepo Dependencies
         run: npm ci
-      - name: Run Prisma Generate
-        run: npx prisma generate
-      - name: Build workspaces
-        run: npm run build
-      - name: Run Integration Tests
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=prisma/schema.prisma
+
+      - name: Run Schema Push & Migrations
+        run: npx prisma db push --schema=prisma/schema.prisma --force-reset --accept-data-loss
+
+      - name: Seed Database Records
+        run: npx ts-node apps/api/src/seed.ts
+
+      - name: Build Monorepo API Gateway
+        run: npm run build --workspace=apps/api
+
+      - name: Build Monorepo Web Portal
+        run: npm run build --workspace=apps/web
+
+      - name: Run Self-Contained Integration Tests
         run: npm run test --workspace=apps/api
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E Browser Tests
+        run: npx playwright test --config=apps/web/playwright.config.ts
