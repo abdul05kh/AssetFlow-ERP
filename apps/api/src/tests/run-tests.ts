@@ -2,6 +2,7 @@ import assert from "assert";
 import { execSync } from "child_process";
 import { Server } from "http";
 import app from "../app";
+import { prisma } from "../config/db";
 
 const API_BASE = "http://localhost:4000/api/v1";
 const HEALTH_URL = "http://localhost:4000/health";
@@ -293,6 +294,37 @@ async function runTests() {
       assert.strictEqual(resApprove.status, 200, `Expected 200, got ${resApprove.status}`);
       assert.strictEqual(payloadApprove.data.status, "APPROVED");
       logTest("Workflow: Transfer Approved & Mapped", "PASS");
+
+      // Phase 9 - Regression Tests: Wait for post-commit hooks and assert records exist
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const activity = await prisma.activityLog.findFirst({
+        where: {
+          action: "TRANSFER",
+          targetId: testAssetId,
+        },
+      });
+      assert.ok(activity, "ActivityLog record not found for transfer");
+      assert.strictEqual(activity.currentState, "ALLOCATED");
+
+      const audit = await prisma.auditLog.findFirst({
+        where: {
+          tableName: "AssetTransfer",
+          action: "UPDATE",
+          recordId: testTransferId,
+        },
+      });
+      assert.ok(audit, "AuditLog record not found for transfer request update");
+
+      const notification = await prisma.notification.findFirst({
+        where: {
+          userId: managerUserId,
+          message: { contains: "transfer ownership has been approved" },
+        },
+      });
+      assert.ok(notification, "Notification record not found for transferee");
+
+      logTest("Regression: Post-Commit Activity, Audit & Notifications Verified", "PASS");
     } catch (err: any) {
       logTest("Workflow: Transfer Approved & Mapped", "FAIL", err.message);
       throw err;
@@ -341,6 +373,110 @@ async function runTests() {
       logTest("Reports: Dashboard Statistics Compiled", "PASS");
     } catch (err: any) {
       logTest("Reports: Dashboard Statistics Compiled", "FAIL", err.message);
+      throw err;
+    }
+
+    // 9. CONCURRENCY & STRESS TEST SCENARIO
+    try {
+      console.log("\n[StressTest] Launching concurrency checks (20 allocations, 10 transfer approvals)...");
+      const stressAssets: string[] = [];
+      const stressAllocs: string[] = [];
+
+      // 1. Create a category for stress tests
+      const resCat = await fetchSafe(`${API_BASE}/assets/categories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({
+          name: `Stress Test Category ${Date.now()}`,
+          description: "High concurrency validations",
+          sharedResource: false,
+          defaultMaintenanceInterval: 90,
+        }),
+      });
+      const payloadCat = await resCat.json();
+      const stressCategoryId = payloadCat.data.id;
+
+      // 2. Spawn 20 allocations concurrently
+      console.log("[StressTest] Creating 20 assets & active allocations concurrently...");
+      const allocPromises = Array.from({ length: 20 }).map(async (_, idx) => {
+        const uniqueSerial = `SN-ST-${idx}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const resAsset = await fetchSafe(`${API_BASE}/assets`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+          body: JSON.stringify({
+            name: `Stress Asset ${idx}`,
+            serialNumber: uniqueSerial,
+            categoryId: stressCategoryId,
+            departmentId: testDeptId,
+            acquisitionDate: new Date().toISOString(),
+            acquisitionCost: 100.0,
+            currentLocation: "Stress Lab",
+            condition: "NEW",
+            sharedResource: false,
+          }),
+        });
+        const payloadAsset = await resAsset.json();
+        const assetId = payloadAsset.data.id;
+        stressAssets.push(assetId);
+
+        // Allocate the asset
+        const resAlloc = await fetchSafe(`${API_BASE}/allocations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+          body: JSON.stringify({
+            assetId,
+            employeeId: devEmployeeId,
+            notes: `Stress test allocation ${idx}`,
+          }),
+        });
+        const payloadAlloc = await resAlloc.json();
+        stressAllocs.push(payloadAlloc.data.id);
+      });
+
+      await Promise.all(allocPromises);
+      console.log(`[StressTest] Successfully completed 20 concurrent allocations.`);
+
+      // 3. Spawn 10 transfer approvals concurrently
+      console.log("[StressTest] Submitting 10 transfer requests and approving them concurrently...");
+      const transferPromises = Array.from({ length: 10 }).map(async (_, idx) => {
+        const assetId = stressAssets[idx];
+        const resReq = await fetchSafe(`${API_BASE}/transfers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+          body: JSON.stringify({
+            assetId,
+            targetHolderId: managerUserId,
+            reason: `Stress transfer request ${idx}`,
+          }),
+        });
+        const payloadReq = await resReq.json();
+        const transferId = payloadReq.data.id;
+
+        // Approve concurrently
+        const resApprove = await fetchSafe(`${API_BASE}/transfers/${transferId}/approve`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+          body: JSON.stringify({ status: "APPROVED" }),
+        });
+        assert.strictEqual(resApprove.status, 200);
+      });
+
+      await Promise.all(transferPromises);
+      console.log(`[StressTest] Successfully completed 10 concurrent transfer approvals.`);
+
+      // Allow background post-commit logs to write
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Verify that at least 50 audit logs and activity logs were written successfully
+      const auditCount = await prisma.auditLog.count({});
+      const activityCount = await prisma.activityLog.count({});
+      console.log(`[StressTest] Database audit logs: ${auditCount}, activity logs: ${activityCount}`);
+      assert.ok(auditCount >= 50, "Expected at least 50 audit logs in database");
+      assert.ok(activityCount >= 30, "Expected activity logs to be written");
+
+      logTest("StressTest: 10 Transfers & 20 Allocations Concurrency", "PASS");
+    } catch (err: any) {
+      logTest("StressTest: 10 Transfers & 20 Allocations Concurrency", "FAIL", err.message);
       throw err;
     }
 
