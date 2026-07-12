@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-07-12T08:46:43.038Z",
+  "gitCommit": "3d29a9a4e9d3c03aebc197ec284c44bc84052d23",
+  "branch": "main",
+  "nodeVersion": "v24.13.0",
+  "databaseProvider": "SQLite/fallback",
+  "os": "Windows_NT 10.0.26200",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-13700HX",
+  "systemMetrics": {
+    "peakRssMemory": "492.24 MB",
+    "heapTotal": "422.47 MB",
+    "heapUsed": "303.39 MB",
+    "cpuTimeMs": 3312,
+    "avgEventLoopDelayMs": 0.4,
+    "maxEventLoopDelayMs": 3
+  },
+  "httpMetrics": {
+    "totalRequestsSimulated": 100,
+    "successCount": 100,
+    "errorCount": 0,
+    "throughputOpsPerSecond": 20.13,
+    "averageLatencyMs": 38.98,
+    "p95LatencyMs": 89,
+    "p99LatencyMs": 101,
+    "maxLatencyMs": 101,
+    "totalRuntimeMs": 4967
+  },
+  "databaseMetrics": {
+    "totalQueries": 510,
+    "totalReads": 409,
+    "totalWrites": 101,
+    "avgQueryTimeMs": 5.95,
+    "slowestQueryText": "{\"data\":{\"action\":\"CREATE\",\"targetType\":\"Asset\",\"targetId\":\"210425dd-be05-4d47-b106-0c51c9ec3c87\",\"currentState\":\"AVAILABLE\",\"remarks\":\"Asset registered with tag: AF-000040 and name: Perf Asset 39\"}}",
+    "slowestQueryTimeMs": 67
+  }
+}

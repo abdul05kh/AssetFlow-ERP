@@ -10,6 +10,17 @@ Configure your environment settings in the backend file `apps/api/.env`:
 - **`DATABASE_URL`**: Production PostgreSQL server credentials (`postgresql://user:password@host:5432/db`).
 - **`JWT_SECRET`**: Strong encryption secret.
 - **`PORT`**: API listener port (`4000`).
+- **`DB_PROVIDER`**: Explicitly set database provider (`postgresql` or `sqlite`).
+- **`SQLITE_STRESS_WORKERS`**: Limit for SQLite stress test concurrency (default `3`).
+- **`POSTGRES_STRESS_WORKERS`**: Limit for PostgreSQL stress test concurrency (default `25`).
+
+---
+
+## 2. Telemetry and Operational Metrics
+
+For production system observability, the API exposes live queue state and query latencies at the metrics endpoint:
+- **Telemetry Endpoint**: `GET http://localhost:4000/api/v1/metrics`
+- **Output Metrics**: Active queue length, job failure rate, average execution latency, and top 10 slowest database queries.
 
 ---
 

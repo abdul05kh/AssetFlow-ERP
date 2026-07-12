@@ -34,12 +34,13 @@ For sandboxed local development (such as terminal virtualizations lacking Docker
 
 ---
 
-## 🛡️ Centralized Audit Logging
+## 🛡️ Centralized Audit Logging & Job Queue
 
-A modern, non-blocking Prisma Query Extension in `apps/api/src/config/db.ts` intercepts all database mutations:
+A modern, non-blocking Prisma Query Extension in `apps/api/src/config/db.ts` intercepts all database mutations and routes them to a generic, sequential background FIFO `BackgroundJobQueue` (concurrency = 1):
 - **CREATE, UPDATE, DELETE** actions are trapped automatically.
 - Logs include user identifiers, entity types, mutated row keys, old/new states as JSON, client IP addresses, user agent headers, and correlation tracking tokens.
-- Deferring log persistence using `setImmediate` avoids transaction deadlocks.
+- Deferring log persistence through the background queue eliminates SQLite writer deadlocks and minimizes business transaction times.
+- Real-time telemetry is exposed via `GET /api/v1/metrics`. Detailed lifecycle info is mapped in [QUEUE_ARCHITECTURE.md](docs/QUEUE_ARCHITECTURE.md).
 
 ---
 
@@ -51,6 +52,7 @@ Interactive OpenAPI 3.0 specs are exposed dynamically:
 
 Endpoints cover:
 - Authentication (`POST /auth/login`)
+- Telemetry Metrics (`GET /api/v1/metrics`)
 - Asset Registry (`GET /assets`, `POST /assets`)
 - Allocations (`POST /allocations`)
 - Asset Returns (`POST /returns`)
@@ -60,19 +62,38 @@ Endpoints cover:
 
 ---
 
-## 🧪 Running Integration & E2E Tests
+## 🧪 Running Validation, Stress, & Performance Tests
 
-### 1. Integration Tests
-To run the automated, self-contained integration test suite (which automatically initializes database schema, executes migrations, applies seeds, starts the Express gateway, polls `/health`, and runs 8 REST tests):
+AssetFlow implements three distinct, isolated test runners to assure stability, scalability, and latency targets. Detailed design info is mapped in [TESTING_ARCHITECTURE.md](docs/TESTING_ARCHITECTURE.md).
+
+### 1. Functional Integration Tests
+To run the deterministic, SQLite-compatible integration suite:
 ```bash
-npm run test --workspace=apps/api
+npm run test
 ```
 
-### 2. Playwright E2E Browser Tests
-To run Playwright browser tests (which automatically orchestrate both Next.js and API server startup and teardown internally):
+### 2. Concurrency Stress Benchmarks
+To run the provider-aware concurrency stress test (limits parallel workers to 3 for SQLite, 25+ for PostgreSQL):
+```bash
+npm run test:stress
+```
+Outputs results to `docs/STRESS_TEST_REPORT.md` and `docs/benchmarks/`.
+
+### 3. Performance Telemetry Profiling
+To measure latency, throughput, event loop delays, and CPU time:
+```bash
+npm run test:performance
+```
+Outputs reports to `docs/PERFORMANCE_REPORT.md`.
+
+### 4. Playwright E2E Browser Tests
+To run automated Next.js E2E browser tests:
 ```bash
 npx playwright test --config=apps/web/playwright.config.ts
 ```
 
-### 3. Continuous Integration (CI)
-The project includes a production-grade GitHub Actions CI workflow in [.github/workflows/ci.yml](file:///.github/workflows/ci.yml) that automatically validates code quality and test compliance on every push and pull request to the `main` branch. All services are monitored via the `/health` endpoint before running browser validation scenarios.
+### 5. Automated CI/CD Workflows
+Three distinct workflows are configured in `.github/workflows/`:
+- **`ci.yml`**: Runs linting, build verification, integration tests, and Playwright tests on every push.
+- **`stress-tests.yml`**: Nightly or manually runs the concurrency stress benchmarks.
+- **`release-validation.yml`**: Runs comprehensive verification tests and Docker builds before production release.
