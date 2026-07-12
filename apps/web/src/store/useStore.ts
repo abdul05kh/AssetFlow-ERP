@@ -31,9 +31,21 @@ interface ERPState {
   logout: () => void;
 }
 
+const getInitialUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch (e) {
+    localStorage.removeItem("user");
+    return null;
+  }
+};
+
 export const useStore = create<ERPState>((set) => ({
   token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
-  user: typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null,
+  user: getInitialUser(),
   activeTab: "overview",
   stats: null,
   assets: [],
