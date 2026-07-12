@@ -238,3 +238,77 @@ model MaintenanceRequest {
 }
 
 // -------------------------------------------------------------
+// VENDOR & PROCUREMENT
+// -------------------------------------------------------------
+
+model Vendor {
+  id             String          @id @default(uuid())
+  name           String
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  status         String          @default("ACTIVE") // ACTIVE, INACTIVE
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model PurchaseOrder {
+  id          String              @id @default(uuid())
+  orderNumber String              @unique // PO-XXXXXX
+  vendorId    String
+  vendor      Vendor              @relation(fields: [vendorId], references: [id])
+  orderDate   DateTime            @default(now())
+  totalAmount Decimal
+  status      String              @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, RECEIVED, CANCELLED
+  items       PurchaseOrderItem[]
+  attachments Attachment[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  assetName       String
+  description     String?
+  quantity        Int
+  unitPrice       Decimal
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// -------------------------------------------------------------
+// AUDIT MANAGEMENT
+// -------------------------------------------------------------
+
+model Audit {
+  id           String      @id @default(uuid())
+  name         String
+  departmentId String
+  department   Department  @relation(fields: [departmentId], references: [id])
+  location     String
+  startDate    DateTime
+  endDate      DateTime
+  auditorId    String
+  auditor      User        @relation("AuditorRelation", fields: [auditorId], references: [id])
+  status       String      @default("CREATED") // CREATED, ASSIGNED, VERIFICATION, DISCREPANCY, CLOSED
+  items        AuditItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model AuditItem {
+  id               String    @id @default(uuid())
+  auditId          String
+  audit            Audit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  assetId          String
+  asset            Asset     @relation(fields: [assetId], references: [id])
+  status           String    @default("VERIFIED") // VERIFIED, MISSING, DAMAGED
+  discrepancyNotes String?
+  verifiedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
