@@ -138,3 +138,6 @@ jobs:
 
       - name: Run Playwright E2E Browser Tests
         run: npx playwright test --config=apps/web/playwright.config.ts
+
+      - name: Build Docker API Image (Diagnostics)
+        run: docker build -f docker/Dockerfile.api -t assetflow-api:test .
