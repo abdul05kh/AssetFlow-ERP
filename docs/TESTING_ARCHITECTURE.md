@@ -65,3 +65,26 @@ Performance indicators output metrics to `docs/benchmarks/`:
 - **Average Latency**: Target < 100ms.
 - **P95 Latency**: Target < 250ms.
 - **Queue Dropped Jobs**: Must remain **0** at all times.
+
+---
+
+## 5. E2E Test Hardening & Hydration Safety
+
+To achieve 100% deterministic test execution and avoid flaky behavior, AssetFlow ERP incorporates specific architectural solutions for client-side hydration and testing diagnostics.
+
+### 5.1 Next.js SSR Hydration Safety
+- **The Issue**: Zustand store tokens are initialized directly from `localStorage` on client load. During Next.js Server-Side Rendering (SSR), `window` is undefined, so the server renders the login UI. If a token exists on the client, React tries to render the Dashboard immediately during hydration, causing a DOM hydration mismatch that detaches event handlers.
+- **The Solution**: In `apps/web/src/app/page.tsx`, we implement a `mounted` local state variable. The portal renders the static Login UI shell when `!mounted` (matching the server-rendered HTML exactly) with `data-hydrated="false"`. Once mounted, React transitions cleanly to either the Dashboard or the interactive Login UI, setting `data-hydrated="true"`.
+
+### 5.2 Deterministic Playwright Orchestration
+- **The Issue**: E2E tests often interact with input elements or submit buttons before the React event listeners have fully hydrated and attached to the DOM. This results in standard browser GET actions (appending `?` and reloading the page), causing inputs to lose values.
+- **The Solution**: We implement a custom helper `gotoAndHydrate(page)` in `e2e.spec.ts`. This wrapper runs `page.goto("/")` and explicitly blocks until `[data-hydrated='true']` is matched, ensuring event listeners are fully attached.
+
+### 5.3 Next.js allowedDevOrigins configuration
+- **The Issue**: In development testing, the dev server HMR client connects to `ws://127.0.0.1:3000/_next/webpack-hmr`. Next.js blocks this by default to prevent cross-site request forgery.
+- **The Solution**: We explicitly configure `allowedDevOrigins` to include `127.0.0.1` and `localhost` in `apps/web/next.config.ts`.
+
+### 5.4 failure Diagnostic Logging
+- **The Issue**: Debugging failing headless browser tests in CI pipelines is notoriously difficult without context.
+- **The Solution**: The test runner is configured with diagnostic hooks (`test.beforeEach` and `test.afterEach`) that stream all browser console logs, network requests/responses, failed requests, and JavaScript page errors into a memory buffer. On failure, these logs are automatically dumped into a `browser-debug.log` file inside the test's result directory, alongside Playwright's screenshots, videos, and trace artifacts.
+

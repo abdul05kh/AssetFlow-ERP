@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-07-12T08:46:05.840Z",
-  "gitCommit": "3d29a9a4e9d3c03aebc197ec284c44bc84052d23",
+  "timestamp": "2026-07-12T10:15:36.084Z",
+  "gitCommit": "15a22441de67179ddefc40834ee2a965c515c21e",
   "branch": "main",
   "nodeVersion": "v24.13.0",
   "databaseProvider": "SQLITE",
@@ -8,21 +8,21 @@
   "os": "Windows_NT 10.0.26200 (x64)",
   "cpu": "13th Gen Intel(R) Core(TM) i7-13700HX",
   "memoryUsage": {
-    "rss": "494.56 MB",
-    "heapTotal": "423.34 MB",
-    "heapUsed": "276.65 MB"
+    "rss": "498.72 MB",
+    "heapTotal": "424.59 MB",
+    "heapUsed": "277.19 MB"
   },
   "metrics": {
     "successOps": 9,
     "failedOps": 0,
     "successRate": "100.00%",
-    "averageLatencyMs": 199.11,
-    "p95LatencyMs": 560,
-    "p99LatencyMs": 560,
-    "maxLatencyMs": 560,
-    "throughputOpsPerSec": 3.71,
-    "totalRuntimeMs": 2428,
-    "cpuTimeMs": 1062,
+    "averageLatencyMs": 71.33,
+    "p95LatencyMs": 206,
+    "p99LatencyMs": 206,
+    "maxLatencyMs": 206,
+    "throughputOpsPerSec": 4.87,
+    "totalRuntimeMs": 1848,
+    "cpuTimeMs": 219,
     "auditLogsCreated": 44,
     "activityLogsCreated": 10,
     "notificationsCreated": 9

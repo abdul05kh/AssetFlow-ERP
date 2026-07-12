@@ -53,6 +53,11 @@ export default function ERPPortal() {
     logout
   } = useStore();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Authentication states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -416,10 +421,10 @@ export default function ERPPortal() {
   // RENDERING LOGIC
   // -------------------------------------------------------------
 
-  if (!token) {
+  if (!mounted || !token) {
     // Elegant Dark Theme Login UI
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 font-sans p-6">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 font-sans p-6" data-hydrated={mounted ? "true" : "false"}>
         <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 shadow-2xl">
           <div className="flex flex-col items-center mb-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-lg mb-3">
@@ -478,7 +483,7 @@ export default function ERPPortal() {
   }
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden" data-hydrated="true">
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-white/10 bg-zinc-900 flex flex-col justify-between">
         <div>

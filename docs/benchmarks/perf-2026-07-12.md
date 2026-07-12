@@ -1,7 +1,7 @@
 # System Performance Telemetry Report — AssetFlow ERP
 
-- **Timestamp**: 2026-07-12T08:46:43.038Z
-- **Git Commit**: `3d29a9a4e9d3c03aebc197ec284c44bc84052d23`
+- **Timestamp**: 2026-07-12T10:15:55.380Z
+- **Git Commit**: `15a22441de67179ddefc40834ee2a965c515c21e`
 - **Branch**: `main`
 - **Node Version**: v24.13.0
 
@@ -11,9 +11,9 @@
 
 | Performance Dimension | Measured Value |
 | :--- | :--- |
-| **Throughput** | 20.13 requests/sec |
+| **Throughput** | 47.26 requests/sec |
 | **Total Workload Run** | 100 requests (50 creations, 50 queries) |
-| **Total Runtime** | 4967 ms |
+| **Total Runtime** | 2116 ms |
 | **Success / Failure** | 100 Success / 0 Failures |
 
 ---
@@ -22,10 +22,10 @@
 
 | Percentile SLA | Latency (ms) |
 | :--- | :--- |
-| **Average Latency** | 38.98 ms |
-| **P95 Latency** | 89 ms |
-| **P99 Latency** | 101 ms |
-| **Maximum Latency** | 101 ms |
+| **Average Latency** | 11.02 ms |
+| **P95 Latency** | 48 ms |
+| **P99 Latency** | 62 ms |
+| **Maximum Latency** | 62 ms |
 
 ---
 
@@ -36,9 +36,9 @@
 | **Total Queries** | 510 |
 | **Total Reads** | 409 |
 | **Total Writes** | 101 |
-| **Average Query Time** | 5.95 ms |
-| **Slowest Query Time** | 67 ms |
-| **Slowest Query Args** | `{"data":{"action":"CREATE","targetType":"Asset","targetId":"210425dd-be05-4d47-b106-0c51c9ec3c87","c...` |
+| **Average Query Time** | 2.01 ms |
+| **Slowest Query Time** | 64 ms |
+| **Slowest Query Args** | `{"data":{"action":"CREATE","targetType":"Asset","targetId":"2061abb6-ab37-478d-ae0d-30011ba1449d","c...` |
 
 ---
 
@@ -46,8 +46,8 @@
 
 | System Telemetry Dimension | Measured Value |
 | :--- | :--- |
-| **Peak RSS Memory** | 492.24 MB |
-| **Heap Memory Used** | 303.39 MB |
-| **CPU Time** | 3312 ms |
-| **Average Event Loop Delay** | 0.4 ms |
-| **Maximum Event Loop Delay** | 3 ms |
+| **Peak RSS Memory** | 496.23 MB |
+| **Heap Memory Used** | 302.65 MB |
+| **CPU Time** | 859 ms |
+| **Average Event Loop Delay** | 0.06 ms |
+| **Maximum Event Loop Delay** | 1 ms |

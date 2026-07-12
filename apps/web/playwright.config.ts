@@ -10,7 +10,9 @@ export default defineConfig({
   use: {
     // Explicit IPv4 — Node 18+ resolves 'localhost' to ::1 (IPv6) on some systems.
     baseURL: "http://127.0.0.1:3000",
-    trace: "on-first-retry",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     headless: true,
   },
   projects: [

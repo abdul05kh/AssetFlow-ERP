@@ -1,7 +1,7 @@
 # Stress Test Benchmark Report — AssetFlow ERP
 
-- **Timestamp**: 2026-07-12T08:46:05.840Z
-- **Git Commit**: `3d29a9a4e9d3c03aebc197ec284c44bc84052d23`
+- **Timestamp**: 2026-07-12T10:15:36.084Z
+- **Git Commit**: `15a22441de67179ddefc40834ee2a965c515c21e`
 - **Branch**: `main`
 - **Node Version**: v24.13.0
 - **Operating System**: Windows_NT 10.0.26200 (x64)
@@ -18,11 +18,11 @@
 | **Success Rate** | **100.00%** |
 | **Success Operations** | 9 |
 | **Failed Operations** | 0 |
-| **Throughput** | 3.71 ops/sec |
-| **Total Runtime** | 2428 ms |
-| **CPU Time** | 1062 ms |
-| **Peak RSS Memory** | 494.56 MB |
-| **Heap Used** | 276.65 MB |
+| **Throughput** | 4.87 ops/sec |
+| **Total Runtime** | 1848 ms |
+| **CPU Time** | 219 ms |
+| **Peak RSS Memory** | 498.72 MB |
+| **Heap Used** | 277.19 MB |
 
 ---
 
@@ -30,10 +30,10 @@
 
 | SLA Percentile | Latency (ms) |
 | :--- | :--- |
-| **Average Latency** | 199.11 ms |
-| **P95 Latency** | 560 ms |
-| **P99 Latency** | 560 ms |
-| **Maximum Latency** | 560 ms |
+| **Average Latency** | 71.33 ms |
+| **P95 Latency** | 206 ms |
+| **P99 Latency** | 206 ms |
+| **Maximum Latency** | 206 ms |
 
 ---
 

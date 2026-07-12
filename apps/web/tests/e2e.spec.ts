@@ -1,10 +1,59 @@
 import { test, expect } from "@playwright/test";
+import fs from "fs";
+import path from "path";
+
+async function gotoAndHydrate(page: any) {
+  await page.goto("/");
+  await page.waitForSelector("[data-hydrated='true']");
+}
 
 test.describe("AssetFlow ERP E2E Test Suite", () => {
-  
+  let logs: string[] = [];
+
+  test.beforeEach(async ({ page }) => {
+    logs = [];
+    page.on("console", (msg) => {
+      const line = `[Browser Console] [${msg.type()}] ${msg.text()}`;
+      logs.push(line);
+      console.log(line);
+    });
+    page.on("request", (req) => {
+      const line = `[Browser Request] ${req.method()} ${req.url()}`;
+      logs.push(line);
+      console.log(line);
+    });
+    page.on("response", (res) => {
+      const line = `[Browser Response] ${res.status()} ${res.url()}`;
+      logs.push(line);
+      console.log(line);
+    });
+    page.on("requestfailed", (req) => {
+      const line = `[Browser Request Failed] ${req.method()} ${req.url()} - ${req.failure()?.errorText}`;
+      logs.push(line);
+      console.log(line);
+    });
+    page.on("pageerror", (err) => {
+      const line = `[Browser Page Error] ${err.message}\n${err.stack}`;
+      logs.push(line);
+      console.log(line);
+    });
+  });
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status !== "passed") {
+      const debugLogPath = testInfo.outputPath("browser-debug.log");
+      const dir = path.dirname(debugLogPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(debugLogPath, logs.join("\n"), "utf8");
+      console.log(`Saved E2E failure browser logs to: ${debugLogPath}`);
+    }
+  });
+
   test("1. Authentication - Invalid Login and UI Elements Verification", async ({ page }) => {
     // Navigate via baseURL (http://127.0.0.1:3000) — avoids IPv6 ECONNREFUSED on Node 18+
-    await page.goto("/");
+    await gotoAndHydrate(page);
 
     // Check login page elements exist
     await expect(page.locator("h2:has-text('AssetFlow ERP')")).toBeVisible();
@@ -23,7 +72,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("2. Authentication - Successful Login with Demo Credentials", async ({ page }) => {
-    await page.goto("/");
+    await gotoAndHydrate(page);
 
     // Fill valid seed credentials (explicitly development/demo data)
     await page.fill("input[type='email']", "admin@assetflow.erp");
@@ -39,7 +88,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("3. Assets - Search and Filters Operations", async ({ page }) => {
-    await page.goto("/");
+    await gotoAndHydrate(page);
     await page.fill("input[type='email']", "admin@assetflow.erp");
     await page.fill("input[type='password']", "Password123");
     await page.click("button[type='submit']");
@@ -57,7 +106,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("4. Audit Log and Actions - RBAC Enforcement Checks", async ({ page }) => {
-    await page.goto("/");
+    await gotoAndHydrate(page);
     await page.fill("input[type='email']", "admin@assetflow.erp");
     await page.fill("input[type='password']", "Password123");
     await page.click("button[type='submit']");
@@ -68,4 +117,3 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
     await expect(page.locator("button:has-text('Assets Inventory')")).toBeVisible();
   });
 });
-
