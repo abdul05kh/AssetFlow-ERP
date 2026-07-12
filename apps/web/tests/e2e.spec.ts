@@ -3,8 +3,8 @@ import { test, expect } from "@playwright/test";
 test.describe("AssetFlow ERP E2E Test Suite", () => {
   
   test("1. Authentication - Invalid Login and UI Elements Verification", async ({ page }) => {
-    // Navigate to local dashboard
-    await page.goto("http://localhost:3000");
+    // Navigate via baseURL (http://127.0.0.1:3000) — avoids IPv6 ECONNREFUSED on Node 18+
+    await page.goto("/");
 
     // Check login page elements exist
     await expect(page.locator("h2:has-text('AssetFlow ERP')")).toBeVisible();
@@ -23,7 +23,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("2. Authentication - Successful Login with Demo Credentials", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("/");
 
     // Fill valid seed credentials (explicitly development/demo data)
     await page.fill("input[type='email']", "admin@assetflow.erp");
@@ -39,7 +39,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("3. Assets - Search and Filters Operations", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("/");
     await page.fill("input[type='email']", "admin@assetflow.erp");
     await page.fill("input[type='password']", "Password123");
     await page.click("button[type='submit']");
@@ -57,7 +57,7 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
   });
 
   test("4. Audit Log and Actions - RBAC Enforcement Checks", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("/");
     await page.fill("input[type='email']", "admin@assetflow.erp");
     await page.fill("input[type='password']", "Password123");
     await page.click("button[type='submit']");
@@ -68,3 +68,4 @@ test.describe("AssetFlow ERP E2E Test Suite", () => {
     await expect(page.locator("button:has-text('Assets Inventory')")).toBeVisible();
   });
 });
+

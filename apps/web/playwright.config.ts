@@ -8,7 +8,8 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    // Explicit IPv4 — Node 18+ resolves 'localhost' to ::1 (IPv6) on some systems.
+    baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
     headless: true,
   },
@@ -18,25 +19,27 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // Phase 9 - Spawn servers relative toapps/web location
   webServer: [
     {
-      // In CI: uses pre-built .next/ from `npm run build` (next start).
-      // Locally: reuses an already-running dev server (reuseExistingServer=true).
-      command: process.env.CI ? "npm run start" : "npm run dev",
-      url: "http://localhost:3000",
+      // Force port 3000 with -p flag so Next.js ignores the PORT env var.
+      // PORT=4000 is set globally in CI for the API; without -p 3000 Next.js
+      // would bind on 4000 and collide with the API server.
+      command: process.env.CI ? "npm run start -- -p 3000" : "npm run dev -- -p 3000",
+      url: "http://127.0.0.1:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
     {
-      // In CI: uses pre-built dist/main.js from `npm run build` (node dist/main.js).
-      // Locally: reuses an already-running dev server (reuseExistingServer=true).
+      // API reads PORT=4000 from env — no explicit flag needed.
       command: process.env.CI
         ? "npm run start --prefix ../api"
         : "npm run dev --prefix ../api",
-      url: "http://localhost:4000/health",
+      // Explicit IPv4 probe — avoids ECONNREFUSED ::1:4000 on Node 18+.
+      url: "http://127.0.0.1:4000/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
-    }
+    },
   ],
 });
+
+

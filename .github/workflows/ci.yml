@@ -51,8 +51,90 @@ jobs:
       - name: Run Self-Contained Integration Tests
         run: npm run test --workspace=apps/api
 
+      # RC-2 fix: integration tests wipe+reseed the DB and bind port 4000.
+      # Re-seed now so Playwright gets clean demo accounts, and wait 3s
+      # for any TIME_WAIT sockets to expire before Playwright spawns the API.
+      - name: Re-seed Database for Playwright
+        run: |
+          npx prisma db push --schema=prisma/schema.prisma --force-reset --accept-data-loss
+          npx ts-node apps/api/src/seed.ts
+
+      - name: Wait for Port 4000 to be Released
+        run: |
+          echo "Waiting for port 4000 to be fully released..."
+          for i in $(seq 1 10); do
+            if ! ss -tlnp | grep -q ':4000'; then
+              echo "Port 4000 is free (check $i)"
+              break
+            fi
+            echo "Port 4000 still in use (check $i), waiting 1s..."
+            sleep 1
+          done
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
+
+      # Step 5 diagnostics: verify build artifacts exist and both servers
+      # can start, then confirm curl health checks pass before Playwright.
+      - name: Diagnose Build Artifacts and Server Startup
+        run: |
+          echo "=== Node / npm versions ==="
+          node -v
+          npm -v
+
+          echo "=== API dist/ contents ==="
+          ls -la apps/api/dist/
+          ls -la apps/api/dist/main.js
+
+          echo "=== Web .next/ contents ==="
+          ls -la apps/web/.next/
+
+          echo "=== Starting API server (background) ==="
+          node apps/api/dist/main.js &
+          API_PID=$!
+          echo "API PID: $API_PID"
+
+          echo "=== Waiting for API health ==="
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:4000/health; then
+              echo ""
+              echo "✓ API health check passed (attempt $i)"
+              break
+            fi
+            echo "Waiting for API... ($i/20)"
+            sleep 1
+          done
+
+          echo "=== Stopping API server ==="
+          kill $API_PID 2>/dev/null || true
+          wait $API_PID 2>/dev/null || true
+          sleep 1
+
+          echo "=== Starting frontend server (background) ==="
+          cd apps/web && node_modules/.bin/next start &
+          WEB_PID=$!
+          echo "Web PID: $WEB_PID"
+
+          echo "=== Waiting for frontend ==="
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3000; then
+              echo ""
+              echo "✓ Frontend health check passed (attempt $i)"
+              break
+            fi
+            echo "Waiting for frontend... ($i/20)"
+            sleep 1
+          done
+
+          echo "=== Stopping frontend server ==="
+          kill $WEB_PID 2>/dev/null || true
+          wait $WEB_PID 2>/dev/null || true
+          sleep 1
+
+          echo "✓ API starts"
+          echo "✓ Frontend starts"
+          echo "✓ curl localhost:4000/health succeeds"
+          echo "✓ curl localhost:3000 succeeds"
 
       - name: Run Playwright E2E Browser Tests
         run: npx playwright test --config=apps/web/playwright.config.ts

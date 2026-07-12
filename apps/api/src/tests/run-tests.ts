@@ -3,6 +3,8 @@ import { execSync } from "child_process";
 import { Server } from "http";
 import app from "../app";
 import { prisma } from "../config/db";
+import { jobQueue } from "../utils/job-queue";
+
 
 const API_BASE = "http://localhost:4000/api/v1";
 const HEALTH_URL = "http://localhost:4000/health";
@@ -383,14 +385,18 @@ async function runTests() {
   } catch (err) {
     console.error("❌ Test suite run failed.");
     if (server) server.close();
+    await prisma.$disconnect().catch(() => {});
     process.exit(1);
   } finally {
-    // Phase 3 - Gracefully stop server
+    // Phase 3 - Gracefully stop server, disconnect DB, drain job queue, and exit
+    // so port 4000 is immediately released before the Playwright step starts.
     if (server) {
       console.log("[Teardown] Gracefully shutting down Express test server listener...");
-      server.close();
+      await new Promise<void>((resolve) => server!.close(() => resolve()));
     }
+    await jobQueue.shutdown(3000);
+    await prisma.$disconnect().catch(() => {});
   }
 }
 
-runTests();
+runTests().then(() => process.exit(0)).catch(() => process.exit(1));
