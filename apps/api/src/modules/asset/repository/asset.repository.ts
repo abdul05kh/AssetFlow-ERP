@@ -36,7 +36,7 @@ export class AssetRepository {
   // -------------------------------------------------------------
 
   async createAsset(data: CreateAssetInput) {
-    return prisma.$transaction(async (tx: TransactionClient) => {
+    const assetId = await prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Calculate the next unique Asset Tag code (e.g. AF-000001)
       const lastAsset = await tx.asset.findFirst({
         orderBy: { tag: "desc" },
@@ -80,14 +80,16 @@ export class AssetRepository {
         });
       }
 
-      return tx.asset.findUnique({
-        where: { id: asset.id },
-        include: {
-          category: true,
-          department: true,
-          images: true,
-        },
-      });
+      return asset.id;
+    });
+
+    return prisma.asset.findUnique({
+      where: { id: assetId },
+      include: {
+        category: true,
+        department: true,
+        images: true,
+      },
     });
   }
 
@@ -127,46 +129,33 @@ export class AssetRepository {
   }
 
   async updateAsset(id: string, data: UpdateAssetInput) {
-    return prisma.$transaction(async (tx: TransactionClient) => {
-      const updateData: any = {
-        name: data.name,
-        serialNumber: data.serialNumber,
-        categoryId: data.categoryId,
-        departmentId: data.departmentId,
-        acquisitionDate: data.acquisitionDate ? new Date(data.acquisitionDate) : undefined,
-        acquisitionCost: data.acquisitionCost ? new Decimal(data.acquisitionCost) : undefined,
-        currentLocation: data.currentLocation,
-        condition: data.condition,
-        status: data.status,
-        warrantyExpiry: data.warrantyExpiry === null ? null : (data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined),
-        description: data.description,
-      };
+    const updateData: any = {
+      name: data.name,
+      serialNumber: data.serialNumber,
+      categoryId: data.categoryId,
+      departmentId: data.departmentId,
+      acquisitionDate: data.acquisitionDate ? new Date(data.acquisitionDate) : undefined,
+      acquisitionCost: data.acquisitionCost ? new Decimal(data.acquisitionCost) : undefined,
+      currentLocation: data.currentLocation,
+      condition: data.condition,
+      status: data.status,
+      warrantyExpiry: data.warrantyExpiry === null ? null : (data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined),
+      description: data.description,
+    };
 
-      // Clean undefined keys
-      Object.keys(updateData).forEach(
-        (key) => updateData[key] === undefined && delete updateData[key]
-      );
+    // Clean undefined keys
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key]
+    );
 
-      const asset = await tx.asset.update({
+    if (!data.images) {
+      // Execute simple single write directly without transaction
+      const asset = await prisma.asset.update({
         where: { id },
         data: updateData,
       });
 
-      // Update images if provided
-      if (data.images) {
-        // Delete current images and replace
-        await tx.assetImage.deleteMany({ where: { assetId: id } });
-        if (data.images.length > 0) {
-          await tx.assetImage.createMany({
-            data: data.images.map((url) => ({
-              assetId: id,
-              url,
-            })),
-          });
-        }
-      }
-
-      return tx.asset.findUnique({
+      return prisma.asset.findUnique({
         where: { id: asset.id },
         include: {
           category: true,
@@ -174,6 +163,36 @@ export class AssetRepository {
           images: true,
         },
       });
+    }
+
+    // Otherwise use transaction for multiple table writes
+    const assetId = await prisma.$transaction(async (tx: TransactionClient) => {
+      const asset = await tx.asset.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Delete current images and replace
+      await tx.assetImage.deleteMany({ where: { assetId: id } });
+      if (data.images && data.images.length > 0) {
+        await tx.assetImage.createMany({
+          data: data.images.map((url) => ({
+            assetId: id,
+            url,
+          })),
+        });
+      }
+
+      return asset.id;
+    });
+
+    return prisma.asset.findUnique({
+      where: { id: assetId },
+      include: {
+        category: true,
+        department: true,
+        images: true,
+      },
     });
   }
 

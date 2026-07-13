@@ -47,23 +47,24 @@ export class TransferRepository {
       });
     }
 
+    // 1. Fetch transfer request and validate outside transaction
+    const transfer = await prisma.assetTransfer.findUnique({
+      where: { id },
+      include: { targetHolder: true, asset: true },
+    });
+
+    if (!transfer) {
+      throw new BusinessRuleError("Transfer request not found", "TRANSFER_NOT_FOUND");
+    }
+
+    if (transfer.status !== "PENDING") {
+      throw new BusinessRuleError(`Transfer request is already ${transfer.status}`, "TRANSFER_002");
+    }
+
+    const now = new Date();
+
     // APPROVED runs inside database transaction
-    return prisma.$transaction(async (tx: TransactionClient) => {
-      const transfer = await tx.assetTransfer.findUnique({
-        where: { id },
-        include: { targetHolder: true, asset: true },
-      });
-
-      if (!transfer) {
-        throw new BusinessRuleError("Transfer request not found", "TRANSFER_NOT_FOUND");
-      }
-
-      if (transfer.status !== "PENDING") {
-        throw new BusinessRuleError(`Transfer request is already ${transfer.status}`, "TRANSFER_002");
-      }
-
-      const now = new Date();
-
+    const transferId = await prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Close current allocation
       await tx.allocation.update({
         where: { id: transfer.allocationId },
@@ -103,14 +104,18 @@ export class TransferRepository {
           approvedById,
           transferDate: now,
         },
-        include: {
-          asset: true,
-          currentHolder: true,
-          targetHolder: true,
-        },
       });
 
-      return updated;
+      return updated.id;
+    });
+
+    return prisma.assetTransfer.findUnique({
+      where: { id: transferId },
+      include: {
+        asset: true,
+        currentHolder: true,
+        targetHolder: true,
+      },
     });
   }
 

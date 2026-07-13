@@ -84,6 +84,9 @@ export class TransferService {
     }
 
     const updated = await transferRepository.updateStatus(id, input.status, operatorId);
+    if (!updated) {
+      throw new BusinessRuleError("Transfer request not found after update", "TRANSFER_NOT_FOUND");
+    }
 
     if (input.status === "APPROVED") {
       eventBus.publish("TransferApproved", {

@@ -4,8 +4,16 @@ import { BusinessRuleError } from "../../../utils/errors";
 
 export class AuditRepository {
   async create(data: CreateAuditInput) {
-    return prisma.$transaction(async (tx: TransactionClient) => {
-      // 1. Create the Audit Cycle record
+    // 1. Discover all assets currently mapped to this department outside transaction
+    const departmentAssets = await prisma.asset.findMany({
+      where: {
+        departmentId: data.departmentId,
+        status: { notIn: ["RETIRED", "DISPOSED"] },
+      },
+    });
+
+    const auditId = await prisma.$transaction(async (tx: TransactionClient) => {
+      // 2. Create the Audit Cycle record
       const audit = await tx.audit.create({
         data: {
           name: data.name,
@@ -15,14 +23,6 @@ export class AuditRepository {
           endDate: new Date(data.endDate),
           auditorId: data.auditorId,
           status: "ASSIGNED",
-        },
-      });
-
-      // 2. Discover all assets currently mapped to this department
-      const departmentAssets = await tx.asset.findMany({
-        where: {
-          departmentId: data.departmentId,
-          status: { notIn: ["RETIRED", "DISPOSED"] },
         },
       });
 
@@ -37,16 +37,18 @@ export class AuditRepository {
         });
       }
 
-      return tx.audit.findUnique({
-        where: { id: audit.id },
-        include: {
-          department: true,
-          auditor: true,
-          items: {
-            include: { asset: true },
-          },
+      return audit.id;
+    });
+
+    return prisma.audit.findUnique({
+      where: { id: auditId },
+      include: {
+        department: true,
+        auditor: true,
+        items: {
+          include: { asset: true },
         },
-      });
+      },
     });
   }
 
@@ -103,24 +105,25 @@ export class AuditRepository {
   }
 
   async close(id: string) {
-    return prisma.$transaction(async (tx: TransactionClient) => {
-      const audit = await tx.audit.findUnique({
-        where: { id },
-        include: { items: { include: { asset: true } } },
-      });
+    // 1. Fetch audit details outside transaction
+    const audit = await prisma.audit.findUnique({
+      where: { id },
+      include: { items: { include: { asset: true } } },
+    });
 
-      if (!audit) {
-        throw new BusinessRuleError("Audit cycle not found", "AUDIT_NOT_FOUND");
-      }
+    if (!audit) {
+      throw new BusinessRuleError("Audit cycle not found", "AUDIT_NOT_FOUND");
+    }
 
-      if (audit.status === "CLOSED") {
-        throw new BusinessRuleError("Audit cycle is already closed", "AUDIT_002");
-      }
+    if (audit.status === "CLOSED") {
+      throw new BusinessRuleError("Audit cycle is already closed", "AUDIT_002");
+    }
 
-      // Check if there are any discrepancies (missing or damaged items)
-      const hasDiscrepancy = audit.items.some((item) => ["MISSING", "DAMAGED"].includes(item.status));
-      const finalStatus = hasDiscrepancy ? "DISCREPANCY" : "CLOSED";
+    // Check if there are any discrepancies (missing or damaged items)
+    const hasDiscrepancy = audit.items.some((item) => ["MISSING", "DAMAGED"].includes(item.status));
+    const finalStatus = hasDiscrepancy ? "DISCREPANCY" : "CLOSED";
 
+    const auditId = await prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Process asset updates based on checklist outcomes
       for (const item of audit.items) {
         if (item.status === "MISSING") {
@@ -158,23 +161,29 @@ export class AuditRepository {
       }
 
       // 2. Set audit cycle status
-      const updatedAudit = await tx.audit.update({
+      const updated = await tx.audit.update({
         where: { id },
         data: { status: "CLOSED" },
-        include: {
-          department: true,
-          auditor: true,
-          items: {
-            include: { asset: true },
-          },
-        },
       });
 
-      return {
-        audit: updatedAudit,
-        hasDiscrepancy,
-      };
+      return updated.id;
     });
+
+    const updatedAudit = await prisma.audit.findUnique({
+      where: { id: auditId },
+      include: {
+        department: true,
+        auditor: true,
+        items: {
+          include: { asset: true },
+        },
+      },
+    });
+
+    return {
+      audit: updatedAudit!,
+      hasDiscrepancy,
+    };
   }
 
   async list(params: {

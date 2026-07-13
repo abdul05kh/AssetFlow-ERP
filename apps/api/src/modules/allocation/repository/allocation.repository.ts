@@ -5,30 +5,25 @@ import { BusinessRuleError } from "../../../utils/errors";
 export class AllocationRepository {
   async create(data: CreateAllocationInput) {
     return prisma.$transaction(async (tx: TransactionClient) => {
-      // 1. Fetch the asset and lock/check status
-      const asset = await tx.asset.findUnique({
-        where: { id: data.assetId },
+      // 1. Atomically lock and update asset status to ALLOCATED if it is currently AVAILABLE
+      const updatedAsset = await tx.asset.updateMany({
+        where: { id: data.assetId, status: "AVAILABLE" },
+        data: { status: "ALLOCATED" },
       });
 
-      if (!asset) {
-        throw new BusinessRuleError("Target asset does not exist", "ASSET_NOT_FOUND");
-      }
-
-      // Concurrency/Double allocation check
-      if (asset.status !== "AVAILABLE") {
+      if (updatedAsset.count === 0) {
+        // Fallback read for precise business rule errors
+        const asset = await tx.asset.findUnique({ where: { id: data.assetId } });
+        if (!asset) {
+          throw new BusinessRuleError("Target asset does not exist", "ASSET_NOT_FOUND");
+        }
         throw new BusinessRuleError(
           `Asset ${asset.tag} cannot be allocated. Current status: ${asset.status}`,
           "ASSET_002"
         );
       }
 
-      // 2. Update asset status to ALLOCATED
-      await tx.asset.update({
-        where: { id: data.assetId },
-        data: { status: "ALLOCATED" },
-      });
-
-      // 3. Insert allocation record
+      // 2. Insert allocation record
       const allocation = await tx.allocation.create({
         data: {
           assetId: data.assetId,

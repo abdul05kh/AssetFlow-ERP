@@ -4,35 +4,35 @@ import { BusinessRuleError } from "../../../utils/errors";
 
 export class BookingRepository {
   async create(data: CreateBookingInput & { employeeId: string }) {
+    // 1. Fetch asset details outside transaction
+    const asset = await prisma.asset.findUnique({
+      where: { id: data.resourceId },
+    });
+
+    if (!asset) {
+      throw new BusinessRuleError("Target resource does not exist", "RESOURCE_NOT_FOUND");
+    }
+
+    // Check if asset is marked as shared resource
+    if (!asset.sharedResource) {
+      throw new BusinessRuleError(
+        `Asset ${asset.tag} is not registered as a shared resource and cannot be reserved`,
+        "BOOKING_001"
+      );
+    }
+
+    // Validate asset is not retired/disposed/lost
+    if (["RETIRED", "DISPOSED", "LOST"].includes(asset.status)) {
+      throw new BusinessRuleError(
+        `Asset ${asset.tag} cannot be booked because it is ${asset.status}`,
+        "BOOKING_003"
+      );
+    }
+
+    const start = new Date(data.startTime);
+    const end = new Date(data.endTime);
+
     return prisma.$transaction(async (tx: TransactionClient) => {
-      // 1. Fetch asset details
-      const asset = await tx.asset.findUnique({
-        where: { id: data.resourceId },
-      });
-
-      if (!asset) {
-        throw new BusinessRuleError("Target resource does not exist", "RESOURCE_NOT_FOUND");
-      }
-
-      // Check if asset is marked as shared resource
-      if (!asset.sharedResource) {
-        throw new BusinessRuleError(
-          `Asset ${asset.tag} is not registered as a shared resource and cannot be reserved`,
-          "BOOKING_001"
-        );
-      }
-
-      // Validate asset is not retired/disposed/lost
-      if (["RETIRED", "DISPOSED", "LOST"].includes(asset.status)) {
-        throw new BusinessRuleError(
-          `Asset ${asset.tag} cannot be booked because it is ${asset.status}`,
-          "BOOKING_003"
-        );
-      }
-
-      const start = new Date(data.startTime);
-      const end = new Date(data.endTime);
-
       // 2. Check for overlaps: StartA < EndB and EndA > StartB
       const overlapping = await tx.resourceBooking.findFirst({
         where: {
