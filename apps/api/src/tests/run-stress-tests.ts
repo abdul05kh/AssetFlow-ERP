@@ -62,12 +62,14 @@ async function runStressTests() {
 
   console.log(`[Config] Database Provider: ${provider.toUpperCase()}`);
   console.log(`[Config] Concurrency Worker Limit: ${workerLimit}`);
-
   console.log("\n[Bootstrap] Preparing clean database and running Prisma schema migrations...");
   try {
-    execSync("npx prisma generate --schema=../../prisma/schema.prisma", { stdio: "ignore" });
-    execSync("npx prisma db push --schema=../../prisma/schema.prisma --force-reset --accept-data-loss", { stdio: "ignore" });
-    execSync("npx ts-node src/seed.ts", { stdio: "ignore" });
+    const rootDir = path.resolve(__dirname, "../../../..");
+    const schemaPath = path.resolve(rootDir, "prisma/schema.prisma");
+    const seedPath = path.resolve(__dirname, "../seed.ts");
+    execSync(`npx prisma generate --schema="${schemaPath}"`, { stdio: "ignore" });
+    execSync(`npx prisma db push --schema="${schemaPath}" --force-reset --accept-data-loss`, { stdio: "ignore" });
+    execSync(`npx ts-node "${seedPath}"`, { stdio: "ignore" });
     console.log("[Bootstrap] Database migration and seed data applied successfully.");
   } catch (err: any) {
     console.error(`❌ Database bootstrap failed: ${err.message}`);

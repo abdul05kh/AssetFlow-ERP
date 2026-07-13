@@ -38,9 +38,12 @@ async function runPerformanceTests() {
 
   console.log("[Bootstrap] Preparing clean database for profiling...");
   try {
-    execSync("npx prisma generate --schema=../../prisma/schema.prisma", { stdio: "ignore" });
-    execSync("npx prisma db push --schema=../../prisma/schema.prisma --force-reset --accept-data-loss", { stdio: "ignore" });
-    execSync("npx ts-node src/seed.ts", { stdio: "ignore" });
+    const rootDir = path.resolve(__dirname, "../../../..");
+    const schemaPath = path.resolve(rootDir, "prisma/schema.prisma");
+    const seedPath = path.resolve(__dirname, "../seed.ts");
+    execSync(`npx prisma generate --schema="${schemaPath}"`, { stdio: "ignore" });
+    execSync(`npx prisma db push --schema="${schemaPath}" --force-reset --accept-data-loss`, { stdio: "ignore" });
+    execSync(`npx ts-node "${seedPath}"`, { stdio: "ignore" });
   } catch (err: any) {
     console.error(`❌ Performance bootstrap failed: ${err.message}`);
     process.exit(1);
