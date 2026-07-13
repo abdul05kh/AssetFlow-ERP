@@ -15,6 +15,10 @@ export interface TransactionContext {
   pendingAuditLogs: Array<() => Promise<void>>;
   pendingEvents: Array<{ eventName: string; data: any }>;
   isRecursive?: boolean;
+  queryCount?: number;
+  queryDurationSumMs?: number;
+  lockWaitMs?: number;
+  id?: string;
 }
 
 export const transactionContextStorage = new AsyncLocalStorage<TransactionContext>();
